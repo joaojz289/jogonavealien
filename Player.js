@@ -1,4 +1,4 @@
-import { PATH_NAVE_IMAGEM } from "../utils/constants.js";
+import { PATH_NAVE_IMAGEM } from "./constants.js";
 import Projeteis from "./Projeteis.js";
 
 class Player {
@@ -57,3 +57,4 @@ class Player {
 }
     
 export default Player;
+
