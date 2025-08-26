@@ -1,9 +1,9 @@
-import Alien from "./alien.js";
-import Player from "./Player.js";
-import Projeteis from "./Projeteis.js";
-import Grid from "./Grid.js";
-import Particula from "./Particulas.js";
-import { GameState } from "./constants.js";
+import Alien from "alien.js";
+import Player from "Player.js";
+import Projeteis from "Projeteis.js";
+import Grid from "Grid.js";
+import Particula from "Particulas.js";
+import { GameState } from "constants.js";
 
 const startScreen = document.querySelector(".start-screen");
 const gameOverScreen = document.querySelector(".game-over");
@@ -16,10 +16,10 @@ const buttonRestart = document.querySelector(".button-restart");
 
 gameOverScreen.remove();
 
-const canvas = document.querySelector("canvas"); 
-const ctx = canvas.getContext("2d");  
+const canvas = document.querySelector("canvas");
+const ctx = canvas.getContext("2d");
 
-canvas.width = innerWidth; 
+canvas.width = innerWidth;
 canvas.height = innerHeight;
 
 ctx.imageSmoothingEnabled = false;
@@ -39,227 +39,125 @@ const showGameData = () => { // ALTERAÇÃO: atualiza UI
   highElement.textContent = gameData.high;
 };
 
-const player = new Player(canvas.width, canvas.height);
-const grid = new Grid(5, 10);
-const playerprojeteis = [];
-const alienprojeteis = [];
-const particulas = [];
+showGameData();
 
+// === CÓDIGOS PARA O JOGO EM SI
+let player = null;
+let grid = null;
+let projeteis = [];
+let particulas = [];
 const keys = {
   left: false,
   right: false,
   shoot: {
     pressed: false,
     released: true,
-  }
+  },
 };
 
 const drawProjeteis = () => {
-  const projectiles = [...playerprojeteis, ...alienprojeteis];
-  projectiles.forEach((proj) => {
-    proj.draw(ctx);
-    proj.update();
+  projeteis.forEach((p, index) => {
+    p.draw(ctx);
+    p.update();
+
+    if (p.position.y <= 0 || p.position.y >= canvas.height) {
+      setTimeout(() => {
+        projeteis.splice(index, 1);
+      }, 0);
+    }
   });
 };
 
 const drawParticulas = () => {
-  particulas.forEach((particula, i) => {
-    particula.draw(ctx);
-    particula.update();
+  particulas.forEach((p, index) => {
+    p.draw(ctx);
+    p.update();
 
-    if (particula.opacity <= 0) {
-      particulas.splice(i, 1);
+    if (p.opacity <= 0) {
+      setTimeout(() => {
+        particulas.splice(index, 1);
+      }, 0);
     }
   });
 };
 
-const limparProjeteis = () => {
-  playerprojeteis.forEach((p, i) => {
-    if (p.position.y <= 0) playerprojeteis.splice(i, 1);
-  });
-
-  alienprojeteis.forEach((p, i) => {
-    if (p.position.y >= canvas.height) alienprojeteis.splice(i, 1);
-  });
-};
-
-const criarExplocao = (position, size, color) => {
-  for(let i = 0; i < size; i++) {
-    const particula = new Particula(
-      {
-        x: position.x,
-        y: position.y
+const createParticulas = (object) => {
+  for (let i = 0; i < 15; i += 1) {
+    const p = new Particula({
+        x: object.position.x + object.width / 2,
+        y: object.position.y + object.height / 2,
+      }, {
+        x: (Math.random() - 0.5) * 2,
+        y: (Math.random() - 0.5) * 2,
       },
-      {
-        x: Math.random() -0.5*1.5,
-        y: Math.random() -0.5*1.5,
-      },
-      3,
-      "white"
+      Math.random() * 2,
+      "#B4F27C"
     );
-    particulas.push(particula);
+
+    particulas.push(p);
   }
-};
-
-// === ALTERAÇÃO: função para incrementar score
-const incrementScore = (value) => {
-  gameData.score += value;
-  if (gameData.score > gameData.high) {
-    gameData.high = gameData.score;
-  }
-};
-
-// === ALTERAÇÃO: função para incrementar level
-const incrementLevel = () => {
-  gameData.level += 1;
-};
-
-const checkShootAlien = () => {
-  for (let alienIndex = grid.alien.length - 1; alienIndex >= 0; alienIndex--) {
-    const alien = grid.alien[alienIndex];
-    for (let projectileIndex = playerprojeteis.length - 1; projectileIndex >= 0; projectileIndex--) {
-      const proj = playerprojeteis[projectileIndex];
-      if (alien.hit(proj)) {
-        criarExplocao({
-          x: alien.position.x + alien.width/2,
-          y: alien.position.y + alien.height/2,
-        },
-        10,
-        "white"
-        );
-
-        grid.alien.splice(alienIndex, 1);
-        playerprojeteis.splice(projectileIndex, 1);
-
-        incrementScore(10); // ALTERAÇÃO: incrementa score ao matar alien
-
-        break;
-      }
-    }
-  }
-};
-
-const checkShootPlayer = () => {
-  for (let i = alienprojeteis.length - 1; i >= 0; i--) {
-    const proj = alienprojeteis[i];
-    if (player.hit(proj)) {
-      alienprojeteis.splice(i, 1);
-      gameOver(); 
-      break; 
-    }
-  }
-};
-
-const spawnGrid=() =>{
-  if(grid.alien.length===0){
-    grid.rows = Math.round(Math.random()*9+1);
-    grid.cols = Math.round(Math.random()*9+1);
-    grid.restart();
-
-    incrementLevel(); // ALTERAÇÃO: incrementa level ao limpar a grid
-  }
-};
-
-const gameOver = () => {
-
-  const criarExplosao = (position, size, color) => {
-    for(let i = 0; i < size; i++) {
-      const particula = new Particula(
-        {
-          x: position.x,
-          y: position.y
-        },
-        {
-          x: (Math.random() - 0.5) * 1.5,
-          y: (Math.random() - 0.5) * 1.5,
-        },
-        3,
-        color
-      );
-      particulas.push(particula);
-    }
-  };
-
-  criarExplosao(
-    {
-      x: player.position.x + player.width / 2,
-      y: player.position.y + player.height / 2
-    },
-    10,
-    "red"
-  );
-  currenteState = GameState.GAME_OVER; // ALTERAÇÃO: corrigido typo GAMER_OVER -> GAME_OVER
-  player.alive = false;
-  document.body.append(gameOverScreen);
 };
 
 const gameLoop = () => {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
   if (currenteState === GameState.PLAYING) {
-
-    showGameData(); // ALTERAÇÃO: mostra score, level, high
-
-    spawnGrid();
-
-    drawProjeteis();
-    drawParticulas();
-
-    limparProjeteis();
-
-    checkShootAlien();
-    checkShootPlayer();
-
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    player.draw(ctx);
     grid.draw(ctx);
     grid.update(player.alive);
 
-    ctx.save();
-
-    ctx.translate(
-      player.position.x + player.width / 2,
-      player.position.y + player.height / 2
-    );
-
+    if (keys.left) player.moveLeft();
+    if (keys.right) player.moveRight();
     if (keys.shoot.pressed && keys.shoot.released) {
-      player.shoot(playerprojeteis);
+      player.shoot(projeteis);
       keys.shoot.released = false;
     }
 
-    if (keys.left && player.position.x >= 0) {
-      player.moveLeft();
-      ctx.rotate(-0.15);
+    if (player.alive) {
+      drawProjeteis();
+      drawParticulas();
+    } else {
+      currenteState = GameState.GAME_OVER;
+      createParticulas(player);
+      gameOverScreen.style.display = "flex"; // ADIÇÃO: Mostra a tela de game over
     }
 
-    if (keys.right && player.position.x <= canvas.width - player.width) {
-      player.moveRight();
-      ctx.rotate(0.15);
-    }
+    grid.alien.forEach((alien, indexAlien) => {
+      const colidiuComPlayer = alien.position.y + alien.height >= player.position.y &&
+        alien.position.x <= player.position.x + player.width &&
+        alien.position.x + alien.width >= player.position.x;
 
-    ctx.translate(
-      -player.position.x - player.width / 2,
-      -player.position.y - player.height / 2
-    );
+      if (colidiuComPlayer) {
+        player.alive = false;
+      }
 
-    player.draw(ctx);
+      projeteis.forEach((projetil, indexProjetil) => {
+        const colidiu = projetil.position.x + projetil.width >= alien.position.x &&
+          projetil.position.x <= alien.position.x + alien.width &&
+          projetil.position.y <= alien.position.y + alien.height &&
+          projetil.position.y + projetil.height >= alien.position.y;
 
-    ctx.restore();
-
-    drawParticulas(); // ainda desenha partículas da explosão
-  }
-  if (currenteState === GameState.GAME_OVER) { // ALTERAÇÃO: corrigido typo
-    drawParticulas();
-    drawProjeteis();
-    grid.draw(ctx);
-    grid.update(player.alive);
+        if (colidiu) {
+          gameData.score += 10;
+          setTimeout(() => {
+            grid.alien.splice(indexAlien, 1);
+            projeteis.splice(indexProjetil, 1);
+            createParticulas(alien);
+          }, 0);
+          showGameData();
+        }
+      });
+    });
   }
   requestAnimationFrame(gameLoop);
 };
 
-player.draw(ctx);
+player = new Player(canvas.width, canvas.height);
+grid = new Grid(4, 10);
+gameLoop();
 
 window.addEventListener("keydown", (event) => {
   const key = event.key.toLowerCase();
-  
+
   if (key === "a") {
     keys.left = true;
   }
@@ -274,7 +172,7 @@ window.addEventListener("keydown", (event) => {
 
 window.addEventListener("keyup", (event) => {
   const key = event.key.toLowerCase();
-  
+
   if (key === "a") {
     keys.left = false;
   }
@@ -292,30 +190,16 @@ buttonPlay.addEventListener("click", () => {
   startScreen.remove();
   scoreUi.style.display = "block";
   currenteState = GameState.PLAYING;
-
-  setInterval(() => {
-    const alien = grid.getRandomAlien();
-    if (alien) {
-      alien.shoot(alienprojeteis);
-    }
-  }, 1000);
 });
 
 buttonRestart.addEventListener("click", () => {
-  currenteState = GameState.PLAYING;
-  player.alive = true;
-
-  grid.alien.length = 0;
-  grid.AlienVelocidade = 1;
-
-  alienprojeteis.length = 0;
-
-  gameData.score = 0;     // ALTERAÇÃO: reset score
-  gameData.level = 1;     // ALTERAÇÃO: reset level
-
   gameOverScreen.remove();
+  player = new Player(canvas.width, canvas.height);
+  grid = new Grid(4, 10);
+  projeteis = [];
+  particulas = [];
+  gameData.score = 0;
+  showGameData();
+  currenteState = GameState.PLAYING;
+  gameLoop();
 });
-
-gameLoop();
-
-
