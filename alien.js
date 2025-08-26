@@ -1,4 +1,4 @@
-import { PATH_ALIEN_IMAGEM } from "../utils/constants.js";
+import { PATH_ALIEN_IMAGEM } from "./constants.js";
 import Projeteis from "./Projeteis.js";
 
 class Alien {
@@ -72,5 +72,6 @@ hit(projectile) {
 }
 
 }
+
 
 export default Alien;
